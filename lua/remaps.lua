@@ -1,20 +1,8 @@
 vim.g.mapleader = " "
-vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
-vim.keymap.set("n", "<leader><leader>", ":so<cr>")
 
-vim.keymap.set({ "i", "c" }, "<C-BS>", "<C-w>")
-vim.keymap.set({ "i", "c" }, "<C-Backspace>", "<C-w>")
-
-vim.keymap.set("n", "<C-d>", "<C-d>zz")
-vim.keymap.set("n", "<C-u>", "<C-u>zz")
-vim.keymap.set("n", "<C-l>", "<C-w>l")
-vim.keymap.set("n", "<C-h>", "<C-w>h")
-vim.keymap.set("n", "<C-j>", "<C-w>j")
-vim.keymap.set("n", "<C-k>", "<C-w>k")
-vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
-vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { desc = "Rename symbol" })
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
-
+-- ==============================================================================
+-- REMOVE OLD KEYMAPS
+-- ==============================================================================
 pcall(vim.keymap.del, { "n" }, "grn")
 pcall(vim.keymap.del, { "n" }, "grr")
 pcall(vim.keymap.del, { "n" }, "gri")
@@ -22,24 +10,12 @@ pcall(vim.keymap.del, { "n", "x" }, "gra")
 pcall(vim.keymap.del, { "n" }, "grx")
 pcall(vim.keymap.del, { "n" }, "grt")
 
-vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
-vim.keymap.set("n", "<leader>cr", vim.lsp.buf.rename, { desc = "Rename symbol" })
-vim.keymap.set("n", "<C-s>", vim.lsp.buf.signature_help, { desc = "LSP Signature Help" })
-
--- Snacks
-vim.keymap.set("n", "<leader>lg", function()
-	Snacks.lazygit()
-end, { desc = "Toggle LazyGit" })
-
-vim.keymap.set("n", "<leader>gf", function()
-	Snacks.lazygit.log_file()
-end, { desc = "LazyGit File History" })
-
-vim.keymap.set("n", "<leader>gl", function()
-	Snacks.lazygit.log()
-end, { desc = "LazyGit Log" })
-
+-- ==============================================================================
+-- MODULES & FUNCTIONS
+-- ==============================================================================
+local flash = require("flash")
 local picker = require("snacks").picker
+local dap, dapui = require("dap"), require("dapui")
 
 -- Smart definition or references jump
 local function definition_or_references()
@@ -58,39 +34,582 @@ local function definition_or_references()
 				return
 			end
 		end
-
 		picker.lsp_definitions()
 	end)
 end
 
--- Pickers & Files
-vim.keymap.set("n", "<leader>pf", picker.files, { desc = "Pick file" })
-vim.keymap.set("n", "<leader>pw", function()
-	picker.grep({ need_search = false, live = false })
-end, { desc = "Pick word (Grep)" })
+-- ==============================================================================
+-- LEGENDARY.NVIM CONFIGURATION
+-- ==============================================================================
+require("legendary").keymaps({
+	-- System & Windows
+	{
+		itemgroup = "System & Windows",
+		icon = "󰒲",
+		keymaps = {
+			{
+				"m",
+				"<CMD>vertical rightb Man<CR>",
+				description = "Manpages",
+				mode = "n",
+			},
+			{
+				"-",
+				"<CMD>Oil<CR>",
+				description = "Open parent directory (Oil)",
+				mode = "n",
+			},
+			{
+				"<leader><leader>",
+				":so<cr>",
+				description = "Reload configuration (Source file)",
+				mode = "n",
+			},
+			{
+				"<Esc>",
+				"<cmd>nohlsearch<CR>",
+				description = "Clear search highlight",
+				mode = "n",
+			},
+			{
+				"<C-BS>",
+				"<C-w>",
+				description = "Delete previous word",
+				mode = { "i", "c" },
+			},
+			{
+				"<C-Backspace>",
+				"<C-w>",
+				description = "Delete previous word",
+				mode = { "i", "c" },
+			},
+			{
+				"<C-d>",
+				"<C-d>zz",
+				description = "Scroll down and center",
+				mode = "n",
+			},
+			{
+				"<C-u>",
+				"<C-u>zz",
+				description = "Scroll up and center",
+				mode = "n",
+			},
+			{
+				"<C-h>",
+				"<C-w>h",
+				description = "Move to left window",
+				mode = "n",
+			},
+			{
+				"<C-j>",
+				"<C-w>j",
+				description = "Move to bottom window",
+				mode = "n",
+			},
+			{
+				"<C-k>",
+				"<C-w>k",
+				description = "Move to top window",
+				mode = "n",
+			},
+			{
+				"<C-l>",
+				"<C-w>l",
+				description = "Move to right window",
+				mode = "n",
+			},
+		},
+	},
 
-vim.keymap.set("n", "<leader>pp", picker.projects, { desc = "Projects" })
+	-- Flash Navigation
+	{
+		itemgroup = "Navigation (Flash)",
+		icon = "⚡",
+		keymaps = {
+			{ "r", flash.jump, description = "Flash: Jump to word", mode = { "n", "x" } },
+		},
+	},
 
--- LSP Symbols & Commands
-vim.keymap.set("n", "<leader>ps", picker.lsp_symbols, { desc = "Pick document symbol" })
-vim.keymap.set("n", "<leader>po", function()
-	picker.lsp_workspace_symbols({ search = "" })
-end, { desc = "Pick workspace symbol" })
-vim.keymap.set("n", "<leader>pc", picker.commands, { desc = "Pick commands" })
+	-- Snacks Terminal
+	{
+		itemgroup = "Terminal",
+		icon = "",
+		keymaps = {
+			{
+				"<C-t>",
+				function()
+					Snacks.terminal.toggle(
+						nil,
+						{ win = { position = "right", border = "rounded", width = 0.5, height = 0.8 } }
+					)
+				end,
+				description = "Toggle Terminal",
+				mode = { "n", "t" },
+			},
+			{
+				"<C-o>",
+				"<C-\\><C-n>",
+				description = "Enter Normal Mode from terminal",
+				mode = "t",
+			},
+			{
+				"<C-w>q",
+				"<cmd>wincmd q<cr>",
+				description = "Close terminal window",
+				mode = "t",
+			},
+			{
+				"<C-h>",
+				"<cmd>wincmd h<cr>",
+				description = "Move to left window (Terminal)",
+				mode = "t",
+			},
+			{
+				"<C-j>",
+				"<cmd>wincmd j<cr>",
+				description = "Move to bottom window (Terminal)",
+				mode = "t",
+			},
+			{
+				"<C-k>",
+				"<cmd>wincmd k<cr>",
+				description = "Move to top window (Terminal)",
+				mode = "t",
+			},
+			{
+				"<C-l>",
+				"<cmd>wincmd l<cr>",
+				description = "Move to right window (Terminal)",
+				mode = "t",
+			},
+		},
+	},
 
--- LSP Navigation & Actions
-vim.keymap.set("n", "gd", definition_or_references, { desc = "Go to definition" })
-vim.keymap.set("n", "gr", picker.lsp_references, { desc = "Go to references" })
-vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code actions" })
+	-- Git (Snacks & Picker)
+	{
+		itemgroup = "Git",
+		icon = "󰊢",
+		keymaps = {
+			{
+				"<leader>lg",
+				function()
+					Snacks.lazygit()
+				end,
+				description = "Toggle LazyGit",
+				mode = "n",
+			},
+			{
+				"<leader>gf",
+				function()
+					Snacks.lazygit.log_file()
+				end,
+				description = "Current file history (LazyGit)",
+				mode = "n",
+			},
+			{
+				"<leader>gl",
+				function()
+					Snacks.lazygit.log()
+				end,
+				description = "Commit log (LazyGit)",
+				mode = "n",
+			},
+			{
+				"<leader>gc",
+				picker.git_log,
+				description = "Git commits",
+				mode = "n",
+			},
+			{
+				"<leader>gb",
+				picker.git_branches,
+				description = "Git branches",
+				mode = "n",
+			},
+		},
+	},
 
--- Diagnostics
-vim.keymap.set("n", "<leader>up", picker.diagnostics, { desc = "Workspace diagnostics" })
+	-- Search & Pickers
+	{
+		itemgroup = "Search & Pickers",
+		icon = "",
+		keymaps = {
+			{
+				"<leader>pf",
+				picker.files,
+				description = "Pick file",
+				mode = "n",
+			},
 
--- Git
-vim.keymap.set("n", "<leader>gc", picker.git_log, { desc = "Git commits" })
-vim.keymap.set("n", "<leader>gb", picker.git_branches, { desc = "Git branches" })
+			{ "<leader>pt", "<CMD>OverseerRun<CR>", description = "Pick task", mode = "n" },
+			{
+				"<leader>pw",
+				function()
+					picker.grep({ need_search = false, live = false })
+				end,
+				description = "Pick word (Grep)",
+				mode = "n",
+			},
+			{
+				"<leader>pp",
+				picker.projects,
+				description = "Pick projects",
+				mode = "n",
+			},
+			{
+				"<leader>ph",
+				picker.help,
+				description = "Help tags",
+				mode = "n",
+			},
+			{
+				"<leader>pk",
+				picker.keymaps,
+				description = "Search keymaps",
+				mode = "n",
+			},
+			{
+				"<leader>pC",
+				picker.colorschemes,
+				description = "Search colorschemes",
+				mode = "n",
+			},
 
--- Utilities & Search
-vim.keymap.set("n", "<leader>sh", picker.help, { desc = "Help tags" })
-vim.keymap.set("n", "<leader>sk", picker.keymaps, { desc = "Keymaps" })
-vim.keymap.set("n", "<leader>sC", picker.colorschemes, { desc = "Colorschemes" })
+			-- HERE IS THE INTEGRATION FOR <leader>pc
+			{
+				"<leader>pc",
+				require("legendary").find,
+				description = "Open Command Palette (Legendary)",
+				mode = "n",
+			},
+		},
+	},
+
+	-- LSP & Diagnostics
+	{
+		itemgroup = "LSP",
+		icon = "󰒋",
+		keymaps = {
+			{
+				"gd",
+				definition_or_references,
+				description = "Go to definition (or references)",
+				mode = "n",
+			},
+			{
+				"gr",
+				picker.lsp_references,
+				description = "Go to references",
+				mode = "n",
+			},
+			{
+				"<leader>ca",
+				vim.lsp.buf.code_action,
+				description = "Code action",
+				mode = { "n", "v" },
+			},
+			{
+				"<leader>cr",
+				vim.lsp.buf.rename,
+				description = "Rename symbol",
+				mode = "n",
+			},
+			{
+				"<C-s>",
+				vim.lsp.buf.signature_help,
+				description = "LSP Signature Help",
+				mode = "n",
+			},
+			{
+				"<leader>ps",
+				picker.lsp_symbols,
+				description = "Pick document symbols",
+				mode = "n",
+			},
+			{
+				"<leader>po",
+				function()
+					picker.lsp_workspace_symbols({ search = "" })
+				end,
+				description = "Pick workspace symbols",
+				mode = "n",
+			},
+			{
+				"<leader>up",
+				picker.diagnostics,
+				description = "Workspace diagnostics",
+				mode = "n",
+			},
+		},
+	},
+
+	-- Debug (DAP)
+	{
+		itemgroup = "Debug (DAP)",
+		icon = "",
+		keymaps = {
+			{ "<F5>", dap.continue, description = "Debug: Avvia/Continua", mode = "n" },
+			{ "<S-F5>", dap.run_last, description = "Debug: Ripeti ultima sessione", mode = "n" },
+			{ "<F10>", dap.step_over, description = "Debug: Step over", mode = "n" },
+			{ "<F11>", dap.step_into, description = "Debug: Step into", mode = "n" },
+			{ "<F12>", dap.step_out, description = "Debug: Step out", mode = "n" },
+			{
+				"<leader>do",
+				"<cmd>OverseerToggle<cr>",
+				description = "Debug: Mostra output build (Overseer)",
+				mode = "n",
+			},
+
+			{
+				"<leader>ds",
+				function()
+					if not dap.session() then
+						vim.notify("Nessuna sessione di debug attiva", vim.log.levels.WARN)
+						return
+					end
+					dap.terminate(nil, nil, { terminateDebuggee = true })
+					dapui.close()
+				end,
+				description = "Debug: Stop (termina sessione e processo)",
+				mode = "n",
+			},
+			{ "<leader>dr", dap.restart, description = "Debug: Riavvia sessione", mode = "n" },
+
+			{ "<leader>db", dap.toggle_breakpoint, description = "Debug: Toggle breakpoint", mode = "n" },
+			{
+				"<leader>dB",
+				function()
+					dap.set_breakpoint(vim.fn.input("Condizione breakpoint: "))
+				end,
+				description = "Debug: Breakpoint condizionale",
+				mode = "n",
+			},
+			{
+				"<leader>dL",
+				function()
+					dap.set_breakpoint(nil, nil, vim.fn.input("Messaggio log point: "))
+				end,
+				description = "Debug: Log point",
+				mode = "n",
+			},
+			{
+				"<leader>dc",
+				dap.clear_breakpoints,
+				description = "Debug: Pulisci tutti i breakpoint",
+				mode = "n",
+			},
+
+			{
+				"<leader>dh",
+				function()
+					require("dap.ui.widgets").hover()
+				end,
+				description = "Debug: Ispeziona variabile sotto il cursore",
+				mode = { "n", "v" },
+			},
+			{
+				"<leader>dR",
+				function()
+					dap.repl.toggle()
+				end,
+				description = "Debug: Toggle REPL",
+				mode = "n",
+			},
+			{
+				"<leader>du",
+				dapui.toggle,
+				description = "Debug: Toggle UI",
+				mode = "n",
+			},
+
+			{
+				"<leader>dn",
+				"<cmd>DapCreateLaunchJson<cr>",
+				description = "Debug: Crea launch.json di default",
+				mode = "n",
+			},
+		},
+	},
+
+	-- Treesitter Textobjects: Selections
+	{
+		itemgroup = "Treesitter (Selections)",
+		icon = "󰔱",
+		keymaps = {
+			{
+				"af",
+				function()
+					require("nvim-treesitter-textobjects.select").select_textobject("@function.outer", "textobjects")
+				end,
+				description = "Select around function",
+				mode = { "x", "o" },
+			},
+			{
+				"if",
+				function()
+					require("nvim-treesitter-textobjects.select").select_textobject("@function.inner", "textobjects")
+				end,
+				description = "Select inner function",
+				mode = { "x", "o" },
+			},
+			{
+				"ac",
+				function()
+					require("nvim-treesitter-textobjects.select").select_textobject("@class.outer", "textobjects")
+				end,
+				description = "Select around class",
+				mode = { "x", "o" },
+			},
+			{
+				"ic",
+				function()
+					require("nvim-treesitter-textobjects.select").select_textobject("@class.inner", "textobjects")
+				end,
+				description = "Select inner class",
+				mode = { "x", "o" },
+			},
+			{
+				"as",
+				function()
+					require("nvim-treesitter-textobjects.select").select_textobject("@local.scope", "locals")
+				end,
+				description = "Select local scope",
+				mode = { "x", "o" },
+			},
+		},
+	},
+
+	-- Treesitter Textobjects: Navigation
+	{
+		itemgroup = "Treesitter (Navigation)",
+		icon = "󰔱",
+		keymaps = {
+			{
+				"<leader>a",
+				function()
+					require("nvim-treesitter-textobjects.swap").swap_next("@parameter.inner")
+				end,
+				description = "Swap with next parameter",
+				mode = "n",
+			},
+			{
+				"<leader>A",
+				function()
+					require("nvim-treesitter-textobjects.swap").swap_previous("@parameter.outer")
+				end,
+				description = "Swap with previous parameter",
+				mode = "n",
+			},
+
+			{
+				"]m",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_start("@function.outer", "textobjects")
+				end,
+				description = "Go to next function start",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]]",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects")
+				end,
+				description = "Go to next class start",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]o",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_start(
+						{ "@loop.inner", "@loop.outer" },
+						"textobjects"
+					)
+				end,
+				description = "Go to next loop start",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]s",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_start("@local.scope", "locals")
+				end,
+				description = "Go to next local scope",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]z",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_start("@fold", "folds")
+				end,
+				description = "Go to next fold",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]M",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_end("@function.outer", "textobjects")
+				end,
+				description = "Go to next function end",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"][",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next_end("@class.outer", "textobjects")
+				end,
+				description = "Go to next class end",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"]i",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_next("@conditional.outer", "textobjects")
+				end,
+				description = "Go to next conditional",
+				mode = { "n", "x", "o" },
+			},
+
+			{
+				"[m",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_previous_start("@function.outer", "textobjects")
+				end,
+				description = "Go to previous function start",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"[[",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_previous_start("@class.outer", "textobjects")
+				end,
+				description = "Go to previous class start",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"[M",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_previous_end("@function.outer", "textobjects")
+				end,
+				description = "Go to previous function end",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"[]",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_previous_end("@class.outer", "textobjects")
+				end,
+				description = "Go to previous class end",
+				mode = { "n", "x", "o" },
+			},
+			{
+				"[i",
+				function()
+					require("nvim-treesitter-textobjects.move").goto_previous("@conditional.outer", "textobjects")
+				end,
+				description = "Go to previous conditional",
+				mode = { "n", "x", "o" },
+			},
+		},
+	},
+})

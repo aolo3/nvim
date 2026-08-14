@@ -5,31 +5,63 @@ vim.pack.add({
 	"https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim",
 	"https://github.com/Saghen/blink.cmp",
 	"https://github.com/nvim-treesitter/nvim-treesitter",
+	{ src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
 	"https://github.com/olimorris/onedarkpro.nvim",
 	"https://github.com/stevearc/oil.nvim",
 	"https://github.com/stevearc/conform.nvim",
 	"https://github.com/folke/snacks.nvim",
-	"https://github.com/nvim-mini/mini.icons",
 	"https://github.com/b0o/schemastore.nvim",
-	-- { src = "https://github.com/rose-pine/neovim" },
+	"https://github.com/j-hui/fidget.nvim",
+	"https://github.com/nvim-mini/mini.ai",
+	"https://github.com/nvim-mini/mini.icons",
+	"https://github.com/nvim-mini/mini.pairs",
+	"https://github.com/nvim-mini/mini.surround",
+	"https://github.com/nvim-mini/mini.splitjoin",
+	"https://github.com/folke/flash.nvim",
+	"https://github.com/abecodes/tabout.nvim",
+	"https://github.com/mrjones2014/legendary.nvim",
+	"https://github.com/folke/persistence.nvim",
+	"https://github.com/zbirenbaum/neodim",
+	"https://github.com/folke/lazydev.nvim",
+	"https://github.com/folke/which-key.nvim",
+	"https://github.com/stevearc/overseer.nvim",
+
+	-- DAP
+	"https://github.com/mfussenegger/nvim-dap",
+	"https://github.com/rcarriga/nvim-dap-ui",
+	"https://github.com/nvim-neotest/nvim-nio", -- dipendenza obbligatoria di dap-ui
+	"https://github.com/jay-babu/mason-nvim-dap.nvim",
 })
 require("mason").setup()
 require("mason-lspconfig").setup({})
 require("mason-tool-installer").setup({
-	ensure_installed = {
-		"lua_ls",
-		"stylua",
-		"clangd",
-		"clang-format",
-		"jsonls",
-		"yamlls",
+	ensure_installed = { "lua_ls", "stylua", "clangd", "clang-format", "jsonls", "yamlls" },
+})
+require("onedarkpro").setup({ options = { cursorline = true } })
+vim.cmd("colorscheme onedark")
+require("mini.ai").setup()
+require("mini.icons").setup()
+require("mini.pairs").setup()
+require("mini.splitjoin").setup({ mappings = { toggle = "gs" } })
+require("mini.surround").setup({ mappings = { add = "s", delete = "ds", replace = "cs" } })
+
+require("persistence").setup()
+require("flash").setup()
+require("which-key").setup({
+	preset = "helix",
+})
+
+require("neodim").setup({
+	alpha = 0.5, -- make the dimmed text even dimmer
+	hide = {
+		virtual_text = false,
+		signs = false,
+		underline = false,
 	},
 })
-require("onedarkpro").setup({
-	options = { cursorline = true },
-})
-vim.cmd("colorscheme onedark")
-require("mini.icons").setup()
+
+require("fidget").setup({})
+require("lazydev").setup({})
 
 require("blink.cmp").setup({
 	snippets = {
@@ -68,7 +100,7 @@ require("blink.cmp").setup({
 	},
 
 	-- experimental signature help support
-	-- signature = { enabled = true },
+	-- signature = {enabled = true},
 
 	sources = {
 		-- adding any nvim-cmp sources here will enable them
@@ -168,7 +200,8 @@ require("oil").setup({
 		["<C-s>"] = { "actions.select", opts = { vertical = true } },
 		-- ["<C-h>"] = { "actions.select", opts = { horizontal = true } },
 		["<C-h>"] = false,
-		["<C-t>"] = { "actions.select", opts = { tab = true } },
+		-- ["<C-t>"] = { "actions.select", opts = { tab = true } },
+		["<C-t>"] = false,
 		["<C-p>"] = "actions.preview",
 		["<C-c>"] = { "actions.close", mode = "n" },
 		-- ["<C-l>"] = "actions.refresh",
@@ -325,5 +358,121 @@ require("snacks").setup({
 		layout = {
 			preset = "ivy",
 		},
+		sources = {
+			files = { hidden = true, ignored = false },
+			grep = { hidden = true, ignored = false },
+		},
+	},
+
+	terminal = {},
+})
+
+require("nvim-treesitter-textobjects").setup({
+	move = {
+		set_jumps = true,
+	},
+	select = {
+		-- Automatically jump forward to textobj, similar to targets.vim
+		lookahead = true,
+		-- You can choose the select mode (default is charwise 'v')
+		--
+		-- Can also be a function which gets passed a table with the keys
+		-- * query_string: eg '@function.inner'
+		-- * method: eg 'v' or 'o'
+		-- and should return the mode ('v', 'V', or '<c-v>') or a table
+		-- mapping query_strings to modes.
+		selection_modes = {
+			["@parameter.outer"] = "v", -- charwise
+			["@function.outer"] = "V", -- linewise
+			-- ['@class.outer'] = '<c-v>', -- blockwise
+		},
+		-- If you set this to `true` (default is `false`) then any textobject is
+		-- extended to include preceding or succeeding whitespace. Succeeding
+		-- whitespace has priority in order to act similarly to eg the built-in
+		-- `ap`.
+		--
+		-- Can also be a function which gets passed a table with the keys
+		-- * query_string: eg '@function.inner'
+		-- * selection_mode: eg 'v'
+		-- and should return true of false
+		include_surrounding_whitespace = false,
 	},
 })
+
+-- DAP SETUP
+require("mason-nvim-dap").setup({
+	automatic_installation = true,
+	ensure_installed = { "codelldb" }, -- per C/C++/Rust, dato che usi clangd. Aggiungi "debugpy" per Python, "delve" per Go, ecc.
+	handlers = {}, -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
+})
+
+local dap, dapui = require("dap"), require("dapui")
+dapui.setup()
+
+-- Apri/chiudi la UI automaticamente quando parte/finisce una sessione di debug
+dap.listeners.before.attach.dapui_config = function()
+	dapui.open()
+end
+dap.listeners.before.launch.dapui_config = function()
+	dapui.open()
+end
+dap.listeners.before.event_terminated.dapui_config = function()
+	dapui.close()
+end
+dap.listeners.before.event_exited.dapui_config = function()
+	dapui.close()
+end
+
+vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
+vim.fn.sign_define("DapBreakpointCondition", { text = "◆", texthl = "DapBreakpoint", linehl = "", numhl = "" })
+vim.fn.sign_define("DapLogPoint", { text = "◆", texthl = "DapLogPoint", linehl = "", numhl = "" })
+vim.fn.sign_define("DapBreakpointRejected", { text = "○", texthl = "DapBreakpointRejected", linehl = "", numhl = "" })
+vim.fn.sign_define(
+	"DapStopped",
+	{ text = "▶", texthl = "DapStopped", linehl = "DapStoppedLine", numhl = "DapStoppedLine" }
+)
+
+vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#e06c75" })
+vim.api.nvim_set_hl(0, "DapLogPoint", { fg = "#61afef" })
+vim.api.nvim_set_hl(0, "DapBreakpointRejected", { fg = "#5c6370" })
+vim.api.nvim_set_hl(0, "DapStopped", { fg = "#e06c75" })
+vim.api.nvim_set_hl(0, "DapStoppedLine", { bg = "#4b1818" })
+
+require("overseer").setup({
+	-- 2. Quando un task parte, apri AUTOMATICAMENTE l'output in un vertical split a destra
+	component_aliases = {
+		default = {
+			{ "on_output_summarize", max_lines = 8 },
+			"on_exit_set_status",
+			{ "open_output", direction = "vertical", on_start = "always" },
+			"on_complete_dispose",
+		},
+	},
+
+	-- 3. Se apri l'output MANUALMENTE dalla sidebar dei task (OverseerToggle)
+	task_list = {
+		direction = "right", -- Posiziona anche la sidebar di Overseer a destra
+		bindings = {
+			["<CR>"] = "open_vsplit", -- Premendo Invio apre l'output in split verticale
+		},
+	},
+})
+
+require("legendary").setup({
+	commands = function()
+		local legendary_cmds = {}
+
+		local nvim_cmds = vim.api.nvim_get_commands({})
+
+		for cmd_name, _ in pairs(nvim_cmds) do
+			table.insert(legendary_cmds, {
+				":" .. cmd_name,
+				description = "Comando Neovim: " .. cmd_name,
+			})
+		end
+
+		return legendary_cmds
+	end,
+})
+
+require("tabout").setup({})

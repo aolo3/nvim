@@ -1,15 +1,27 @@
-vim.o.guifont = "Liberation Mono, JetbrainsMono Nerd Font Mono"
-
+vim.o.guifont = "Liberation Mono, JetbrainsMono Nerd Font Mono:h16"
 vim.o.winborder = "single"
 
--- Disabilita l'animazione di transizione del cursore
-vim.g.neovide_cursor_animation_length = 0.0
+if vim.g.neovide then
+	-- vim.g.neovide_fullscreen = true
 
--- Disabilita la scia (trail) del cursore
-vim.g.neovide_cursor_trail_length = 0.0
+	vim.keymap.set("n", "<C-=>", function()
+		vim.g.neovide_scale_factor = vim.g.neovide_scale_factor + 0.1
+	end, { desc = "Neovide zoom in" })
 
--- Disabilita eventuali effetti visivi speciali del cursore (es. particelle, botole, ecc.)
-vim.g.neovide_cursor_vfx_mode = ""
+	vim.keymap.set("n", "<C-0>", function()
+		vim.g.neovide_scale_factor = 1.0
+	end, { desc = "Neovide reset zoom" })
 
--- Mantieni attiva l'animazione dello scrjll (puoi regolare la durata a piacimento, es. 0.15 o 0.3)
-vim.g.neovide_scroll_animation_length = 0
+	vim.keymap.set("n", "<C-->", function()
+		vim.g.neovide_scale_factor = math.max(1.5, vim.g.neovide_scale_factor - 0.1)
+	end, { desc = "Neovide zoom out" })
+
+	-- vim.g.neovide_scroll_animation_length = 0.0
+	vim.g.neovide_cursor_animation_length = 0.07
+
+	-- Disabilita la scia(trail) del cursore
+	vim.g.neovide_cursor_trail_size = 0.5
+
+	-- Disabilita eventuali effetti visivi speciali del cursore (es. particelle, botole, ecc.)
+	-- vim.g.neovide_cursor_vfx_mode = ""
+end
