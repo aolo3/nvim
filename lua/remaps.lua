@@ -38,6 +38,38 @@ local function definition_or_references()
 	end)
 end
 
+local function definition_or_references_vsplit()
+	local params = vim.lsp.util.make_position_params(0, "utf-16")
+	vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
+		if err or not result or vim.tbl_isempty(result) then
+			-- Se fallisce la definizione o non c'è, apre il picker delle definizioni in vsplit
+			picker.lsp_definitions({ jump_type = "vsplit" })
+			return
+		end
+
+		local items = vim.lsp.util.locations_to_items(result, "utf-16")
+		local cur_file = vim.fn.expand("%:p")
+		local cur_line = vim.api.nvim_win_get_cursor(0)[1]
+
+		for _, item in ipairs(items) do
+			-- Se siamo già sulla definizione, apriamo le references in vsplit
+			if vim.fn.fnamemodify(item.filename, ":p") == cur_file and item.lnum == cur_line then
+				picker.lsp_references({ jump_type = "vsplit" })
+				return
+			end
+		end
+
+		-- Se c'è una sola definizione diretta, creiamo lo split prima di saltare
+		if #items == 1 then
+			vim.cmd("vsplit")
+			vim.lsp.util.show_document(result[1], "utf-16", { focus = true })
+		else
+			-- Se ci sono più definizioni, lasciamo gestire al picker in vsplit
+			picker.lsp_definitions({ jump_type = "vsplit" })
+		end
+	end)
+end
+
 -- ==============================================================================
 -- LEGENDARY.NVIM CONFIGURATION
 -- ==============================================================================
@@ -291,6 +323,12 @@ require("legendary").keymaps({
 		itemgroup = "LSP",
 		icon = "󰒋",
 		keymaps = {
+			{
+				"<C-w>gd",
+				definition_or_references_vsplit,
+				description = "Go to definition (or references) in vsplit",
+				mode = "n",
+			},
 			{
 				"gd",
 				definition_or_references,
