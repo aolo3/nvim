@@ -35,25 +35,25 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- Riduce il tempo di attesa prima che Neovim capisca che ti sei fermato (default è 4000ms, troppo lento)
-vim.o.updatetime = 700
+-- vim.o.updatetime = 700
 
 -- Mostra automaticamente il popup degli errori quando il cursore si ferma su una riga
-vim.api.nvim_create_autocmd("CursorHold", {
-	callback = function()
-		local line = vim.api.nvim_win_get_cursor(0)[1] - 1
-		if #vim.diagnostic.get(0, { lnum = line }) == 0 then
-			return
-		end
-		vim.diagnostic.open_float(nil, {
-			focusable = false,
-			close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
-			border = "rounded",
-			source = "always",
-			prefix = "",
-			header = "",
-		})
-	end,
-})
+-- vim.api.nvim_create_autocmd("CursorHold", {
+-- 	callback = function()
+-- 		local line = vim.api.nvim_win_get_cursor(0)[1] - 1
+-- 		if #vim.diagnostic.get(0, { lnum = line }) == 0 then
+-- 			return
+-- 		end
+-- 		vim.diagnostic.open_float(nil, {
+-- 			focusable = false,
+-- 			close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+-- 			border = "rounded",
+-- 			source = "always",
+-- 			prefix = "",
+-- 			header = "",
+-- 		})
+-- 	end,
+-- })
 
 -- Restore cursor to file position in previous editing session
 vim.api.nvim_create_autocmd("BufReadPost", {

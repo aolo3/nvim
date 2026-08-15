@@ -9,6 +9,7 @@ pcall(vim.keymap.del, { "n" }, "gri")
 pcall(vim.keymap.del, { "n", "x" }, "gra")
 pcall(vim.keymap.del, { "n" }, "grx")
 pcall(vim.keymap.del, { "n" }, "grt")
+pcall(vim.keymap.del, { "i" }, "<C-s>")
 
 -- ==============================================================================
 -- MODULES & FUNCTIONS
@@ -355,8 +356,57 @@ require("legendary").keymaps({
 			},
 			{
 				"<C-s>",
-				vim.lsp.buf.signature_help,
-				description = "LSP Signature Help",
+				function()
+					local blink = require("blink.cmp")
+
+					-- se è già aperto, il tasto lo chiude (toggle)
+					if blink.is_signature_visible() then
+						blink.hide_signature()
+						return
+					end
+
+					if not blink.show_signature() then
+						return
+					end
+
+					-- blink.cmp aggiorna il popup (posizione + contenuto) da solo solo sui
+					-- movimenti del cursore in insert mode. In normal mode nessuno lo
+					-- richiama più dopo il primo show, quindi resta fermo dov'era comparso.
+					-- Lo teniamo sincronizzato a mano finché resta aperto.
+					-- show_signature() pubblico non rifà nulla se è già visibile, quindi
+					-- serve richiamare direttamente il modulo interno (non documentato
+					-- pubblicamente, occhio se aggiorni blink.cmp) che usa anche lui.
+					local group = vim.api.nvim_create_augroup("ManualSignatureFollow", { clear = true })
+
+					local function cleanup()
+						pcall(vim.api.nvim_del_augroup_by_id, group)
+					end
+
+					vim.api.nvim_create_autocmd("CursorMoved", {
+						group = group,
+						callback = function()
+							if not blink.is_signature_visible() then
+								cleanup()
+								return
+							end
+							require("blink.cmp.signature.trigger").show({ force = true })
+						end,
+					})
+
+					-- smetti di seguirlo se entri in insert, cambi buffer, o lo chiudi a mano
+					vim.api.nvim_create_autocmd({ "InsertEnter", "BufLeave" }, {
+						group = group,
+						once = true,
+						callback = cleanup,
+					})
+				end,
+				description = "LSP Signature Help (toggle, segue il cursore)",
+				mode = "n",
+			},
+			{
+				"<leader>k",
+				vim.diagnostic.open_float,
+				description = "Show diagnostic",
 				mode = "n",
 			},
 			{
@@ -402,12 +452,63 @@ require("legendary").keymaps({
 			{
 				"<leader>ds",
 				function()
-					if not dap.session() then
+					local session = dap.session()
+					if not session then
 						vim.notify("Nessuna sessione di debug attiva", vim.log.levels.WARN)
 						return
 					end
-					dap.terminate(nil, nil, { terminateDebuggee = true })
-					dapui.close()
+
+					local function do_terminate()
+						-- terminate() è corretto per sessioni "launch" (es. codelldb):
+						-- uccide anche il processo debuggato, cosa che disconnect() non fa di default.
+						-- IMPORTANTE: terminate() vuole UNA tabella di opzioni, non 3 argomenti
+						-- posizionali: il callback va passato come opts.on_done, altrimenti internamente
+						-- 'cb' risulta una tabella invece di una funzione -> crash
+						-- ("attempt to call upvalue 'cb' (a table value)").
+						-- dapui.close() viene chiamato SOLO in on_done, dopo che la sessione è
+						-- davvero terminata, per non entrare in corsa con i listener
+						-- event_terminated/event_exited già definiti in plugins.lua (che altrimenti
+						-- chiamano dapui.close() una seconda volta mentre ci sono ancora richieste
+						-- in sospeso verso l'adapter -> crash).
+						dap.terminate({
+							on_done = function()
+								dapui.close()
+							end,
+						})
+					end
+
+					-- Se il debuggee è ancora "in corsa" (es. uno step_over/into/out è stato
+					-- lanciato e non è ancora arrivato l'evento "stopped"), stopped_thread_id
+					-- è nil. Mandare terminate() in quel momento fa collidere la risposta/evento
+					-- dello step in volo con la sessione che viene smontata: su Windows con
+					-- codelldb questo può far crashare l'adapter (e trascinarsi dietro Neovim)
+					-- invece di dare un errore Lua gestibile. Aspettiamo che si fermi davvero.
+					if not session.stopped_thread_id then
+						vim.notify("Attendo che lo step finisca prima di fermare...", vim.log.levels.INFO)
+						local attempts = 0
+						local timer = vim.uv.new_timer()
+						timer:start(
+							50,
+							50,
+							vim.schedule_wrap(function()
+								attempts = attempts + 1
+								local s = dap.session()
+								if not s then
+									timer:stop()
+									timer:close()
+									return
+								end
+								if s.stopped_thread_id or attempts >= 40 then -- max ~2s di attesa
+									timer:stop()
+									timer:close()
+									do_terminate()
+								end
+							end)
+						)
+						return
+					end
+
+					do_terminate()
 				end,
 				description = "Debug: Stop (termina sessione e processo)",
 				mode = "n",

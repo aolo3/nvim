@@ -100,7 +100,7 @@ require("blink.cmp").setup({
 	},
 
 	-- experimental signature help support
-	-- signature = {enabled = true},
+	signature = { enabled = true },
 
 	sources = {
 		-- adding any nvim-cmp sources here will enable them
@@ -128,10 +128,10 @@ require("blink.cmp").setup({
 
 	keymap = {
 		preset = "enter",
-		["<C-y>"] = { "select_and_accept" },
 		["<C-k>"] = { "select_prev", "fallback" },
 		["<C-j>"] = { "select_next", "fallback" },
 		["<C-Space>"] = { "show", "fallback" },
+		["<C-s>"] = { "show_signature", "hide_signature", "fallback" },
 	},
 })
 
@@ -403,7 +403,7 @@ require("nvim-treesitter-textobjects").setup({
 require("mason-nvim-dap").setup({
 	automatic_installation = true,
 	ensure_installed = { "codelldb" }, -- per C/C++/Rust, dato che usi clangd. Aggiungi "debugpy" per Python, "delve" per Go, ecc.
-	handlers = {},              -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
+	handlers = {}, -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
 })
 
 local dap, dapui = require("dap"), require("dapui")
@@ -442,9 +442,7 @@ require("overseer").setup({
 	-- 2. Quando un task parte, apri AUTOMATICAMENTE l'output in un vertical split a destra
 	component_aliases = {
 		default = {
-			"on_exit_set_status",
 			{ "open_output", direction = "vertical", on_start = "always" },
-			"on_complete_dispose",
 		},
 	},
 
