@@ -428,7 +428,7 @@ require("nvim-treesitter-textobjects").setup({
 require("mason-nvim-dap").setup({
 	automatic_installation = true,
 	ensure_installed = { "codelldb" }, -- per C/C++/Rust, dato che usi clangd. Aggiungi "debugpy" per Python, "delve" per Go, ecc.
-	handlers = {},              -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
+	handlers = {}, -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
 })
 
 local dap, dapui = require("dap"), require("dapui")
@@ -498,7 +498,7 @@ require("legendary").setup({
 })
 
 local null_ls = require("null-ls")
-local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
+local augroup = vim.api.nvim_create_augroup("NullLsRefresh", {})
 
 null_ls.setup({
 	debug = true,
@@ -507,12 +507,17 @@ null_ls.setup({
 		null_ls.builtins.formatting.stylua,
 		null_ls.builtins.completion.spell,
 		null_ls.builtins.diagnostics.cppcheck.with({
+			method = {
+				null_ls.methods.DIAGNOSTICS_ON_SAVE,
+				null_ls.methods.DIAGNOSTICS_ON_OPEN,
+				null_ls.methods.DIAGNOSTICS,
+			},
 			to_temp_file = false,
 		}),
 	},
 
 	on_attach = function(client, bufnr)
-		if client.supports_method("textDocument/formatting") then
+		if client:supports_method("textDocument/formatting") then
 			vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
 			vim.api.nvim_create_autocmd("BufWritePre", {
 				group = augroup,
