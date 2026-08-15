@@ -19,7 +19,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		if not vim.tbl_contains(ts.get_installed(), lang) then
 			ts.install(lang):wait()
 		end
-		vim.treesitter.start()
+		vim.treesitter.start(ev.buf, lang or ev.match)
 	end,
 })
 

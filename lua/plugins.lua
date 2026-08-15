@@ -25,6 +25,7 @@ vim.pack.add({
 	"https://github.com/folke/lazydev.nvim",
 	"https://github.com/folke/which-key.nvim",
 	"https://github.com/stevearc/overseer.nvim",
+	"https://github.com/jake-stewart/multicursor.nvim",
 
 	-- DAP
 	"https://github.com/mfussenegger/nvim-dap",
@@ -59,6 +60,8 @@ require("neodim").setup({
 		underline = false,
 	},
 })
+
+require("multicursor-nvim").setup()
 
 require("fidget").setup({})
 require("lazydev").setup({})
@@ -359,6 +362,21 @@ require("conform").setup({
 require("snacks").setup({
 	---@type snacks.Config
 	lazygit = {},
+	input = {
+		enabled = true,
+		win = {
+			relative = "cursor", -- Ancora la finestra al cursore
+			row = 1, -- Appare esattamente una riga sotto
+			col = 0,
+			width = 40, -- Larghezza del popup
+			border = "rounded", -- Bordi arrotondati
+			title_pos = "left", -- Titolo allineato a sinistra
+			backdrop = false, -- Disattiva l'oscuramento dello sfondo
+			b = {
+				completion = true,
+			},
+		},
+	},
 	picker = {
 		layout = {
 			preset = "ivy",

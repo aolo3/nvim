@@ -1,3 +1,31 @@
+vim.api.nvim_create_user_command("W", function(opts)
+	vim.cmd("w" .. (opts.bang and "!" or "") .. " " .. opts.args)
+end, { bang = true, nargs = "*" })
+
+-- :Q e :Q! -> :q e :q!
+vim.api.nvim_create_user_command("Q", function(opts)
+	vim.cmd("q" .. (opts.bang and "!" or ""))
+end, { bang = true })
+
+-- :Wq, :WQ e varianti con ! -> :wq e :wq!
+local function wq(opts)
+	vim.cmd("wq" .. (opts.bang and "!" or ""))
+end
+vim.api.nvim_create_user_command("Wq", wq, { bang = true })
+vim.api.nvim_create_user_command("WQ", wq, { bang = true })
+
+-- :Wa e :Wa! -> :wa e :wa!
+vim.api.nvim_create_user_command("Wa", function(opts)
+	vim.cmd("wa" .. (opts.bang and "!" or ""))
+end, { bang = true })
+
+-- :Qa, :QA e varianti con ! -> :qa e :qa!
+local function qa(opts)
+	vim.cmd("qa" .. (opts.bang and "!" or ""))
+end
+vim.api.nvim_create_user_command("Qa", qa, { bang = true })
+vim.api.nvim_create_user_command("QA", qa, { bang = true })
+
 local function create_default_launch_json()
 	local dir = vim.fn.getcwd() .. "/.vscode"
 	local path_launch = dir .. "/launch.json"

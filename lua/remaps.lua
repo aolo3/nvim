@@ -41,10 +41,28 @@ end
 
 local function definition_or_references_vsplit()
 	local params = vim.lsp.util.make_position_params(0, "utf-16")
+
+	-- Configurazione per Snacks: mappa <CR> a edit_vsplit e forza l'apertura singola in vsplit
+	local vsplit_opts = {
+		-- Se c'è un solo risultato (es. 1 referenza), usa direttamente edit_vsplit e non aprire il popup
+		auto_confirm = true,
+		win = {
+			input = { keys = { ["<CR>"] = { "edit_vsplit", mode = { "i", "n" } } } },
+			list = { keys = { ["<CR>"] = { "edit_vsplit", mode = { "i", "n" } } } },
+		},
+		-- Diciamo a Snacks di usare SEMPRE il vsplit se bypassa il popup
+		on_show = function() end, -- Reset, gestito dalle keys
+		actions = {
+			-- Se auto_confirm scatta, l'azione 'confirm' di default scatterà.
+			-- Diciamogli di fare 'edit_vsplit' in quel caso.
+			confirm = "edit_vsplit",
+		},
+	}
+
 	vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
 		if err or not result or vim.tbl_isempty(result) then
-			-- Se fallisce la definizione o non c'è, apre il picker delle definizioni in vsplit
-			picker.lsp_definitions({ jump_type = "vsplit" })
+			-- Niente definizione trovata
+			picker.lsp_definitions(vsplit_opts)
 			return
 		end
 
@@ -52,21 +70,30 @@ local function definition_or_references_vsplit()
 		local cur_file = vim.fn.expand("%:p")
 		local cur_line = vim.api.nvim_win_get_cursor(0)[1]
 
+		-- Controlliamo SE siamo già sulla definizione
+		local is_on_definition = false
 		for _, item in ipairs(items) do
-			-- Se siamo già sulla definizione, apriamo le references in vsplit
 			if vim.fn.fnamemodify(item.filename, ":p") == cur_file and item.lnum == cur_line then
-				picker.lsp_references({ jump_type = "vsplit" })
-				return
+				is_on_definition = true
+				break
 			end
 		end
 
-		-- Se c'è una sola definizione diretta, creiamo lo split prima di saltare
+		if is_on_definition then
+			-- Siano GIA' sulla definizione: cerchiamo le references in vsplit.
+			-- Lasciamo che Snacks gestisca tutto (sia singola che multipla) tramite auto_confirm.
+			picker.lsp_references(vsplit_opts)
+			return
+		end
+
+		-- NON siamo sulla definizione.
 		if #items == 1 then
+			-- Se è solo UNA, apriamo lo split e saltiamo
 			vim.cmd("vsplit")
 			vim.lsp.util.show_document(result[1], "utf-16", { focus = true })
 		else
-			-- Se ci sono più definizioni, lasciamo gestire al picker in vsplit
-			picker.lsp_definitions({ jump_type = "vsplit" })
+			-- Se sono PIU' definizioni, usiamo il picker
+			picker.lsp_definitions(vsplit_opts)
 		end
 	end)
 end
@@ -81,7 +108,7 @@ require("legendary").keymaps({
 		icon = "󰒲",
 		keymaps = {
 			{
-				"<C-m>",
+				"<leader>m",
 				function()
 					local mode = vim.fn.mode()
 					local query
@@ -137,13 +164,19 @@ require("legendary").keymaps({
 			},
 			{
 				"<C-BS>",
-				"<C-w>",
+				"<C-S-w>",
+				description = "Delete previous word",
+				mode = { "i", "c" },
+			},
+			{
+				"<C-h>",
+				"<C-S-w>",
 				description = "Delete previous word",
 				mode = { "i", "c" },
 			},
 			{
 				"<C-Backspace>",
-				"<C-w>",
+				"<C-S-w>",
 				description = "Delete previous word",
 				mode = { "i", "c" },
 			},
@@ -246,6 +279,51 @@ require("legendary").keymaps({
 				"<cmd>wincmd l<cr>",
 				description = "Move to right window (Terminal)",
 				mode = "t",
+			},
+		},
+	},
+
+	{
+		itemgroup = "Multi cursors",
+		icon = "",
+		keymaps = {
+			{
+				"gl",
+				function()
+					require("multicursor-nvim").matchAddCursor(1)
+				end,
+				description = "Multicursors add",
+				mode = { "n", "v" },
+			},
+			{
+				"gL",
+				function()
+					require("multicursor-nvim").matchAddCursor(-1)
+				end,
+				description = "Multicursors remove",
+				mode = { "n", "v" },
+			},
+			{
+				"ga",
+				require("multicursor-nvim").matchAllAddCursors,
+				description = "Multicursore: Seleziona tutte le occorrenze",
+				mode = { "n", "v" },
+			},
+			{
+				"<Esc>",
+				function()
+					local mc = require("multicursor-nvim")
+					if not mc.cursorsEnabled() then
+						mc.enableCursors()
+					elseif mc.hasCursors() then
+						mc.clearCursors()
+					else
+						-- Fallback: pulisce la ricerca se non ci sono cursori attivi
+						vim.cmd("noh")
+					end
+				end,
+				description = "Pulisci cursori o rimuovi evidenziazione ricerca",
+				mode = "n",
 			},
 		},
 	},
@@ -379,6 +457,15 @@ require("legendary").keymaps({
 				description = "Code action",
 				mode = { "n", "v" },
 			},
+			{
+				"v",
+				function()
+					vim.treesitter._select.select_parent(vim.v.count1)
+				end,
+				description = "Select outer",
+				mode = { "x", "o" },
+			},
+
 			{
 				"<leader>cr",
 				vim.lsp.buf.rename,
