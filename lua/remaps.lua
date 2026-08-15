@@ -601,30 +601,30 @@ require("legendary").keymaps({
 					-- dello step in volo con la sessione che viene smontata: su Windows con
 					-- codelldb questo può far crashare l'adapter (e trascinarsi dietro Neovim)
 					-- invece di dare un errore Lua gestibile. Aspettiamo che si fermi davvero.
-					if not session.stopped_thread_id then
-						vim.notify("Attendo che lo step finisca prima di fermare...", vim.log.levels.INFO)
-						local attempts = 0
-						local timer = vim.uv.new_timer()
-						timer:start(
-							50,
-							50,
-							vim.schedule_wrap(function()
-								attempts = attempts + 1
-								local s = dap.session()
-								if not s then
-									timer:stop()
-									timer:close()
-									return
-								end
-								if s.stopped_thread_id or attempts >= 40 then -- max ~2s di attesa
-									timer:stop()
-									timer:close()
-									do_terminate()
-								end
-							end)
-						)
-						return
-					end
+					-- if not session.stopped_thread_id then
+					-- 	vim.notify("Attendo che lo step finisca prima di fermare...", vim.log.levels.INFO)
+					-- 	local attempts = 0
+					-- 	local timer = vim.uv.new_timer()
+					-- 	timer:start(
+					-- 		50,
+					-- 		50,
+					-- 		vim.schedule_wrap(function()
+					-- 			attempts = attempts + 1
+					-- 			local s = dap.session()
+					-- 			if not s then
+					-- 				timer:stop()
+					-- 				timer:close()
+					-- 				return
+					-- 			end
+					-- 			if s.stopped_thread_id or attempts >= 40 then -- max ~2s di attesa
+					-- 				timer:stop()
+					-- 				timer:close()
+					-- 				do_terminate()
+					-- 			end
+					-- 		end)
+					-- 	)
+					-- 	return
+					-- end
 
 					do_terminate()
 				end,

@@ -25,22 +25,14 @@ if vim.fn.has("win32") == 1 then
 	end
 end
 
-vim.diagnostic.config({ virtual_text = true }) -- inline diagnostic
+vim.diagnostic.config({
+	virtual_text = true,
+	underline = true,
+	signs = true,
+}) -- inline diagnostic
 
 require("usercmd")
 require("plugins")
 require("ui")
 require("remaps")
 require("autocmd")
--- AUTOCOMMANDS
--- vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
---   callback = function()
---     if vim.lsp.get_clients({ bufnr = 0 })[1] then
---       vim.lsp.buf.document_highlight()
---     end
---   end,
--- })
---
--- vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "BufLeave" }, {
---   callback = vim.lsp.buf.clear_references,
--- })

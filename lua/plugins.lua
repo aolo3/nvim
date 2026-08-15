@@ -26,6 +26,8 @@ vim.pack.add({
 	"https://github.com/folke/which-key.nvim",
 	"https://github.com/stevearc/overseer.nvim",
 	"https://github.com/jake-stewart/multicursor.nvim",
+	"https://github.com/nvim-lua/plenary.nvim",
+	"https://github.com/nvimtools/none-ls.nvim",
 
 	-- DAP
 	"https://github.com/mfussenegger/nvim-dap",
@@ -52,14 +54,14 @@ require("which-key").setup({
 	preset = "helix",
 })
 
-require("neodim").setup({
-	alpha = 0.5, -- make the dimmed text even dimmer
-	hide = {
-		virtual_text = false,
-		signs = false,
-		underline = false,
-	},
-})
+-- require("neodim").setup({
+-- 	alpha = 0.5, -- make the dimmed text even dimmer
+-- 	hide = {
+-- 		virtual_text = false,
+-- 		signs = false,
+-- 		underline = false,
+-- 	},
+-- })
 
 require("multicursor-nvim").setup()
 
@@ -493,6 +495,18 @@ require("legendary").setup({
 
 		return legendary_cmds
 	end,
+})
+
+local null_ls = require("null-ls")
+
+null_ls.setup({
+	debug = true,
+	sources = {
+		null_ls.builtins.formatting.stylua,
+		null_ls.builtins.completion.spell,
+		null_ls.builtins.diagnostics.cmake_lint,
+		null_ls.builtins.diagnostics.cppcheck,
+	},
 })
 
 require("tabout").setup({})
