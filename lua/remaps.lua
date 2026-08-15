@@ -81,6 +81,37 @@ require("legendary").keymaps({
 		icon = "󰒲",
 		keymaps = {
 			{
+				"<C-m>",
+				function()
+					local mode = vim.fn.mode()
+					local query
+					if mode == "v" or mode == "V" or mode == "\22" then
+						local save_reg = vim.fn.getreg("x")
+						local save_regtype = vim.fn.getregtype("x")
+						vim.cmd('normal! "xy')
+						local text = vim.fn.getreg("x")
+						vim.fn.setreg("x", save_reg, save_regtype)
+						query = text
+					else
+						query = vim.fn.expand("<cword>")
+					end
+
+					-- normalizza spazi/newline (es. selezioni multi-riga) in singoli spazi
+					query = query:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+
+					if query == "" then
+						vim.notify("Nessun testo selezionato/sotto il cursore", vim.log.levels.WARN)
+						return
+					end
+
+					local url = "https://duckduckgo.com/?q=" .. vim.uri_encode("\\ " .. query)
+					vim.ui.open(url)
+				end,
+				description = "DuckDuckGo 'Mi sento fortunato' su parola/selezione",
+				mode = { "n", "v" },
+			},
+
+			{
 				"m",
 				"<CMD>vertical rightb Man<CR>",
 				description = "Manpages",

@@ -100,7 +100,12 @@ require("blink.cmp").setup({
 	},
 
 	-- experimental signature help support
-	signature = { enabled = true },
+	signature = {
+		enabled = true,
+		window = {
+			show_documentation = true,
+		},
+	},
 
 	sources = {
 		-- adding any nvim-cmp sources here will enable them
@@ -403,7 +408,7 @@ require("nvim-treesitter-textobjects").setup({
 require("mason-nvim-dap").setup({
 	automatic_installation = true,
 	ensure_installed = { "codelldb" }, -- per C/C++/Rust, dato che usi clangd. Aggiungi "debugpy" per Python, "delve" per Go, ecc.
-	handlers = {}, -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
+	handlers = {},              -- essenziale: senza questa riga l'installazione automatica non configura dap-adapters
 })
 
 local dap, dapui = require("dap"), require("dapui")
