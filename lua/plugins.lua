@@ -372,9 +372,9 @@ require("snacks").setup({
 			border = "rounded", -- Bordi arrotondati
 			title_pos = "left", -- Titolo allineato a sinistra
 			backdrop = false, -- Disattiva l'oscuramento dello sfondo
-			b = {
-				completion = true,
-			},
+			-- b = {
+			-- 	completion = true,
+			-- },
 		},
 	},
 	picker = {
