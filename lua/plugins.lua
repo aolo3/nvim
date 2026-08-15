@@ -8,7 +8,7 @@ vim.pack.add({
 	{ src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
 	"https://github.com/olimorris/onedarkpro.nvim",
 	"https://github.com/stevearc/oil.nvim",
-	"https://github.com/stevearc/conform.nvim",
+	-- "https://github.com/stevearc/conform.nvim",
 	"https://github.com/folke/snacks.nvim",
 	"https://github.com/b0o/schemastore.nvim",
 	"https://github.com/j-hui/fidget.nvim",
@@ -353,13 +353,13 @@ require("oil").setup({
 	},
 })
 
-require("conform").setup({
-	format_on_save = {
-		-- These options will be passed to conform.format()
-		timeout_ms = 500,
-		lsp_format = "fallback",
-	},
-})
+-- require("conform").setup({
+-- 	format_on_save = {
+-- 		-- These options will be passed to conform.format()
+-- 		timeout_ms = 500,
+-- 		lsp_format = "fallback",
+-- 	},
+-- })
 
 require("snacks").setup({
 	---@type snacks.Config
@@ -498,15 +498,31 @@ require("legendary").setup({
 })
 
 local null_ls = require("null-ls")
+local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
 
 null_ls.setup({
 	debug = true,
 	sources = {
+		null_ls.builtins.formatting.clang_format,
 		null_ls.builtins.formatting.stylua,
 		null_ls.builtins.completion.spell,
-		null_ls.builtins.diagnostics.cmake_lint,
-		null_ls.builtins.diagnostics.cppcheck,
+		null_ls.builtins.diagnostics.cppcheck.with({
+			to_temp_file = false,
+		}),
 	},
+
+	on_attach = function(client, bufnr)
+		if client.supports_method("textDocument/formatting") then
+			vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
+			vim.api.nvim_create_autocmd("BufWritePre", {
+				group = augroup,
+				buffer = bufnr,
+				callback = function()
+					vim.lsp.buf.format()
+				end,
+			})
+		end
+	end,
 })
 
 require("tabout").setup({})
