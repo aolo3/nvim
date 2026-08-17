@@ -13,7 +13,7 @@ if vim.g.neovide then
 	end, { desc = "Neovide reset zoom" })
 
 	vim.keymap.set("n", "<C-->", function()
-		vim.g.neovide_scale_factor = math.max(1.5, vim.g.neovide_scale_factor - 0.1)
+		vim.g.neovide_scale_factor = vim.g.neovide_scale_factor - 0.1
 	end, { desc = "Neovide zoom out" })
 
 	-- vim.g.neovide_scroll_animation_length = 0.0

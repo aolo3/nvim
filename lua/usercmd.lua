@@ -103,3 +103,7 @@ local function create_default_launch_json()
 end
 
 vim.api.nvim_create_user_command("DapCreateLaunchJson", create_default_launch_json, {})
+
+vim.api.nvim_create_user_command("DebugLint", function()
+	print(vim.inspect(require("lint").get_running()))
+end, {})

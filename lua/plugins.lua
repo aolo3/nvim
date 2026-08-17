@@ -8,7 +8,6 @@ vim.pack.add({
 	{ src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
 	"https://github.com/olimorris/onedarkpro.nvim",
 	"https://github.com/stevearc/oil.nvim",
-	-- "https://github.com/stevearc/conform.nvim",
 	"https://github.com/folke/snacks.nvim",
 	"https://github.com/b0o/schemastore.nvim",
 	"https://github.com/j-hui/fidget.nvim",
@@ -22,12 +21,13 @@ vim.pack.add({
 	"https://github.com/mrjones2014/legendary.nvim",
 	"https://github.com/folke/persistence.nvim",
 	"https://github.com/zbirenbaum/neodim",
-	"https://github.com/folke/lazydev.nvim",
 	"https://github.com/folke/which-key.nvim",
 	"https://github.com/stevearc/overseer.nvim",
 	"https://github.com/jake-stewart/multicursor.nvim",
 	"https://github.com/nvim-lua/plenary.nvim",
 	"https://github.com/nvimtools/none-ls.nvim",
+	"https://github.com/stevearc/conform.nvim",
+	"https://github.com/mfussenegger/nvim-lint",
 
 	-- DAP
 	"https://github.com/mfussenegger/nvim-dap",
@@ -66,7 +66,6 @@ require("which-key").setup({
 require("multicursor-nvim").setup()
 
 require("fidget").setup({})
-require("lazydev").setup({})
 
 require("blink.cmp").setup({
 	snippets = {
@@ -353,14 +352,6 @@ require("oil").setup({
 	},
 })
 
--- require("conform").setup({
--- 	format_on_save = {
--- 		-- These options will be passed to conform.format()
--- 		timeout_ms = 500,
--- 		lsp_format = "fallback",
--- 	},
--- })
-
 require("snacks").setup({
 	---@type snacks.Config
 	lazygit = {},
@@ -503,10 +494,13 @@ local augroup = vim.api.nvim_create_augroup("NullLsRefresh", {})
 null_ls.setup({
 	debug = true,
 	sources = {
-		null_ls.builtins.formatting.clang_format,
-		null_ls.builtins.formatting.stylua,
-		null_ls.builtins.completion.spell,
 		null_ls.builtins.diagnostics.cppcheck.with({
+			args = {
+				"--enable=warning,style,performance,portability",
+				"--template=gcc",
+				"--project=compile_commands.json",
+				-- "$FILENAME",
+			},
 			method = {
 				null_ls.methods.DIAGNOSTICS_ON_SAVE,
 				null_ls.methods.DIAGNOSTICS_ON_OPEN,
@@ -529,5 +523,26 @@ null_ls.setup({
 		end
 	end,
 })
+
+require("conform").setup({
+	formatters_by_ft = {
+		c = { "clang-format" },
+		cpp = { "clang-format" },
+		lua = { "stylua" },
+		python = { "isort", "black" },
+		rust = { "rustfmt", lsp_format = "fallback" },
+		javascript = { "prettierd", "prettier", stop_after_first = true },
+	},
+	format_on_save = {
+		timeout_ms = 500,
+		lsp_format = "fallback",
+	},
+})
+
+require("lint").linters_by_ft = {
+	c = { "clangtidy", "cppcheck" },
+	cpp = { "clangtidy", "cppcheck" },
+	markdown = { "vale" },
+}
 
 require("tabout").setup({})

@@ -120,3 +120,11 @@ vim.api.nvim_create_autocmd("VimEnter", {
 		end
 	end,
 })
+
+local lint_augroup = vim.api.nvim_create_augroup("Lint", { clear = true })
+vim.api.nvim_create_autocmd({ "BufWritePost", "InsertLeave", "BufEnter" }, {
+	group = lint_augroup,
+	callback = function()
+		require("lint").try_lint()
+	end,
+})
