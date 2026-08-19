@@ -16,7 +16,7 @@ pcall(vim.keymap.del, { "i" }, "<C-s>")
 -- ==============================================================================
 local flash = require("flash")
 local picker = require("snacks").picker
-local dap, dapui = require("dap"), require("dapui")
+local dap = require("dap")
 
 -- Smart definition or references jump
 local function definition_or_references()
@@ -590,7 +590,7 @@ require("legendary").keymaps({
 						-- in sospeso verso l'adapter -> crash).
 						dap.terminate({
 							on_done = function()
-								dapui.close()
+								vim.cmd("DapViewClose")
 							end,
 						})
 					end
@@ -675,7 +675,8 @@ require("legendary").keymaps({
 			},
 			{
 				"<leader>du",
-				dapui.toggle,
+				"<cmd>DapViewToggle<cr>",
+				-- dapui.toggle,
 				description = "Debug: Toggle UI",
 				mode = "n",
 			},

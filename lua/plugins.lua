@@ -21,6 +21,7 @@ vim.pack.add({
 
 	-- UI & Navigation
 	"https://github.com/olimorris/onedarkpro.nvim",
+	"https://github.com/ellisonleao/gruvbox.nvim",
 	"https://github.com/stevearc/oil.nvim",
 	"https://github.com/folke/snacks.nvim",
 	"https://github.com/b0o/schemastore.nvim",
@@ -51,9 +52,10 @@ vim.pack.add({
 
 	-- DAP (Debugging)
 	"https://github.com/mfussenegger/nvim-dap",
-	"https://github.com/rcarriga/nvim-dap-ui",
-	"https://github.com/nvim-neotest/nvim-nio", -- Mandatory dependency for dap-ui
+	-- "https://github.com/rcarriga/nvim-dap-ui",
+	-- "https://github.com/nvim-neotest/nvim-nio", -- Mandatory dependency for dap-ui
 	"https://github.com/jay-babu/mason-nvim-dap.nvim",
+	{ src = "https://github.com/igorlfs/nvim-dap-view", version = vim.version.range("1.*") },
 })
 
 -- ============================================================================
@@ -71,8 +73,10 @@ require("mason-tool-installer").setup({
 -- 3. THEME SETUP
 -- ============================================================================
 
-require("onedarkpro").setup({ options = { cursorline = true } })
-vim.cmd("colorscheme onedark")
+-- require("onedarkpro").setup({ options = { cursorline = true } })
+-- vim.cmd("colorscheme onedark")
+require("gruvbox").setup()
+vim.cmd("colorscheme gruvbox")
 
 -- ============================================================================
 -- 4. MINI MODULES SETUP
@@ -395,21 +399,39 @@ require("mason-nvim-dap").setup({
 	handlers = {}, -- Essential: without this, automatic installation won't configure dap adapters
 })
 
-local dap, dapui = require("dap"), require("dapui")
-dapui.setup()
+local dap = require("dap")
+local dapview = require("dap-view").setup({
+	winbar = {
+		controls = {
+			enabled = true,
+			position = "below",
+		},
+	},
+	windows = {
+		size = 0.5,
+		position = "right",
+		terminal = {
+			size = 0.5,
+			position = "below",
+			-- List of debug adapters for which the terminal should be ALWAYS hidden
+			-- Can also be set to "true" to never show the terminal
+			hide = {},
+		},
+	},
+})
 
 -- Automatically open/close DAP UI when a debug session starts/ends
-dap.listeners.before.attach.dapui_config = function()
-	dapui.open()
+dap.listeners.before.attach.daui_config = function()
+	vim.cmd("DapViewOpen")
 end
 dap.listeners.before.launch.dapui_config = function()
-	dapui.open()
+	vim.cmd("DapViewOpen")
 end
 dap.listeners.before.event_terminated.dapui_config = function()
-	dapui.close()
+	vim.cmd("DapViewClose")
 end
 dap.listeners.before.event_exited.dapui_config = function()
-	dapui.close()
+	vim.cmd("DapViewClose")
 end
 
 vim.fn.sign_define("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
