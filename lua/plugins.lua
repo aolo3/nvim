@@ -422,9 +422,11 @@ local dapview = require("dap-view").setup({
 
 -- Automatically open/close DAP UI when a debug session starts/ends
 dap.listeners.before.attach.daui_config = function()
+	vim.cmd("only")
 	vim.cmd("DapViewOpen")
 end
 dap.listeners.before.launch.dapui_config = function()
+	vim.cmd("only")
 	vim.cmd("DapViewOpen")
 end
 dap.listeners.before.event_terminated.dapui_config = function()
