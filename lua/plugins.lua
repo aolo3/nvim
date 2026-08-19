@@ -6,6 +6,7 @@ local nproc = math.max(1, cpus - 1)
 -- ============================================================================
 
 vim.pack.add({
+
 	-- LSP & Mason
 	"https://github.com/neovim/nvim-lspconfig",
 	"https://github.com/mason-org/mason.nvim",
@@ -13,6 +14,7 @@ vim.pack.add({
 	"https://github.com/mason-org/mason-tool-installer.nvim",
 
 	-- Completion & Treesitter
+	"https://github.com/folke/lazydev.nvim",
 	"https://github.com/Saghen/blink.cmp",
 	"https://github.com/nvim-treesitter/nvim-treesitter",
 	{ src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
@@ -108,6 +110,14 @@ require("fidget").setup({})
 -- 6. AUTOCOMPLETION (BLINK.CMP)
 -- ============================================================================
 
+require("lazydev").setup({
+	library = {
+		-- See the configuration section for more details
+		-- Load luvit types when the `vim.uv` word is found
+		{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
+	},
+})
+
 require("blink.cmp").setup({
 	snippets = {
 		preset = "default",
@@ -152,7 +162,15 @@ require("blink.cmp").setup({
 	},
 
 	sources = {
-		default = { "lsp", "path", "snippets", "buffer" },
+		default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+		providers = {
+			lazydev = {
+				name = "LazyDev",
+				module = "lazydev.integrations.blink",
+				-- make lazydev completions top priority (see `:h blink.cmp`)
+				score_offset = 100,
+			},
+		},
 	},
 
 	cmdline = {
