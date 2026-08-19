@@ -22,6 +22,7 @@ vim.pack.add({
 	-- UI & Navigation
 	"https://github.com/olimorris/onedarkpro.nvim",
 	"https://github.com/ellisonleao/gruvbox.nvim",
+	"https://github.com/w0ng/vim-hybrid.git",
 	"https://github.com/stevearc/oil.nvim",
 	"https://github.com/folke/snacks.nvim",
 	"https://github.com/b0o/schemastore.nvim",
@@ -73,10 +74,11 @@ require("mason-tool-installer").setup({
 -- 3. THEME SETUP
 -- ============================================================================
 
--- require("onedarkpro").setup({ options = { cursorline = true } })
--- vim.cmd("colorscheme onedark")
-require("gruvbox").setup()
-vim.cmd("colorscheme gruvbox")
+require("onedarkpro").setup({ options = { cursorline = true } })
+vim.cmd("colorscheme onedark_vivid")
+-- require("gruvbox").setup()
+-- vim.cmd("set background=dark")
+-- vim.cmd("colorscheme hybrid")
 
 -- ============================================================================
 -- 4. MINI MODULES SETUP
@@ -166,7 +168,13 @@ require("blink.cmp").setup({
 	},
 
 	sources = {
-		default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+		default = {
+			"lazydev",
+			"lsp",
+			"path",
+			"snippets",
+			"buffer",
+		},
 		providers = {
 			lazydev = {
 				name = "LazyDev",
@@ -361,11 +369,17 @@ require("snacks").setup({
 	},
 	picker = {
 		layout = {
-			preset = "ivy",
+			-- preset = "ivy",
 		},
 		sources = {
 			files = { hidden = true, ignored = false },
 			grep = { hidden = true, ignored = false },
+		},
+		formatters = {
+			file = {
+				-- filename_first = true,
+				-- filename_only = true,
+			},
 		},
 	},
 	terminal = {},

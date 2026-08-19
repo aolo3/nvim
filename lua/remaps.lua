@@ -24,6 +24,7 @@ local function definition_or_references()
 	vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
 		if err or not result or vim.tbl_isempty(result) then
 			picker.lsp_definitions()
+
 			return
 		end
 		local items = vim.lsp.util.locations_to_items(result, "utf-16")
