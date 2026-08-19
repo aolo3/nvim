@@ -467,24 +467,82 @@ require("legendary").setup({
 -- ============================================================================
 -- 11. FORMATTING & LINTING
 -- ============================================================================
-
 local null_ls = require("null-ls")
 local augroup = vim.api.nvim_create_augroup("NullLsRefresh", {})
-local cppcheck_jnproc_k = ""
-local cppcheck_jnproc_v = ""
+local helpers = require("null-ls.helpers")
+local jnproc_k = ""
+local jnproc_v = ""
 
 if 0 ~= nproc then
-	cppcheck_jnproc_k = "-j"
-	cppcheck_jnproc_v = tostring(nproc - 1)
+	jnproc_k = "-j"
+	jnproc_v = tostring(nproc - 1)
 end
+
+local clangtidy = {
+	name = "clangtidy",
+	method = {
+		null_ls.methods.DIAGNOSTICS_ON_SAVE,
+		null_ls.methods.DIAGNOSTICS_ON_OPEN,
+		null_ls.methods.DIAGNOSTICS,
+	},
+	filetypes = { "c", "cpp" },
+	generator = helpers.generator_factory({
+		command = "run-clang-tidy",
+		args = function(params)
+			local args = { jnproc_k, jnproc_v, "-checks=clang-analyzer-*" }
+
+			local cc_json = vim.fs.find("compile_commands.json", {
+				upward = true,
+				path = vim.fs.dirname(params.bufname),
+			})[1]
+
+			if cc_json then
+				vim.list_extend(args, { "-p", vim.fs.dirname(cc_json) })
+			end
+
+			vim.list_extend(args, { "$FILENAME" })
+			return args
+		end,
+		to_stdin = false,
+		to_temp_file = false,
+		from_stderr = false,
+		format = "line",
+		check_exit_code = function(code)
+			return code <= 1 -- clang-tidy ritorna 1 se trova warning/error, non è un fallimento
+		end,
+		on_output = function(line, params)
+			-- formato: /path/file.c:5:6: warning: messaggio [check-name]
+			local row, col, severity, message, code_id = line:match("^.-:(%d+):(%d+): (%a+): (.-) %[([%w%.%-]+)%]$")
+
+			if not row then
+				return nil -- salta le righe "note:" (nessun [check-name])
+			end
+
+			local severity_map = {
+				error = vim.diagnostic.severity.ERROR,
+				warning = vim.diagnostic.severity.WARN,
+			}
+
+			return {
+				row = tonumber(row),
+				col = tonumber(col),
+				source = "clang-tidy",
+				message = message,
+				code = code_id,
+				severity = severity_map[severity] or vim.diagnostic.severity.WARN,
+			}
+		end,
+	}),
+}
 
 null_ls.setup({
 	debug = true,
 	sources = {
+		clangtidy,
 		null_ls.builtins.diagnostics.cppcheck.with({
 			args = {
-				cppcheck_jnproc_k,
-				cppcheck_jnproc_v,
+				jnproc_k,
+				jnproc_v,
 				"--enable=warning,style,performance,portability",
 				"--template=gcc",
 				"--project=compile_commands.json",
@@ -502,7 +560,7 @@ null_ls.setup({
 	on_attach = function(client, bufnr)
 		if client:supports_method("textDocument/formatting") then
 			vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
-			vim.api.nvim_create_autocmd("BufWritePre", {
+			vim.api.nvim_create_autocmd({ "BufWritePre" }, {
 				group = augroup,
 				buffer = bufnr,
 				callback = function()
@@ -528,56 +586,56 @@ require("conform").setup({
 	},
 })
 
-local clang_tidy = require("lint.linters.clangtidy")
+-- local clang_tidy = require("lint.linters.clangtidy")
 -- local cppcheck = require("lint.linters.cppcheck")
 
 -- https://clang.llvm.org/extra/clang-tidy/
-vim.list_extend(clang_tidy.args, {
-	"--clang-analyzer-*",
-	-- "--checks=*" -- abseil, altera, android, boost, bugprone,
-	-- 	-- cert, clang, concurrency, cppcoreguidelines, darwin,
-	-- 	-- fuchsia, google, hicpp, linuxkernel, llvm, llvmlibc,
-	-- 	-- misc, modernize, mpi, objc, openmp, performance,
-	-- 	-- portability, readability, zircon
-	-- 	.. ",-darwin-*"
-	-- 	.. ",-linuxkernel-*"
-	-- 	.. ",-llvmlibc-*"
-	-- 	.. ",-objc-*"
-	-- 	.. ",-altera-unroll-loops"
-	-- 	.. ",-bugprone-easily-swappable-parameters"
-	-- 	.. ",-fuchsia-default-arguments-calls"
-	-- 	.. ",-fuchsia-default-arguments-declarations"
-	-- 	.. ",-fuchsia-overloaded-operator"
-	-- 	.. ",-fuchsia-trailing-return"
-	-- 	.. ",-google-explicit-constructor"
-	-- 	.. ",-hicpp-explicit-conversions"
-	-- 	.. ",-llvm-else-after-return"
-	-- 	.. ",-llvm-header-guard"
-	-- 	.. ",-misc-non-private-member-variables-in-classes"
-	-- 	.. ",-misc-use-anonymous-namespace"
-	-- 	.. ",-modernize-use-trailing-return-type"
-	-- 	.. ",-readability-else-after-return"
-	-- 	.. ",-readability-function-cognitive-complexity"
-	-- 	.. ",-readability-identifier-length"
-	-- 	.. ",-readability-isolate-declaration"
-	-- 	.. ",-readability-magic-numbers"
-	-- 	.. ",-readability-redundant-access-specifiers"
-	-- 	.. ",-readability-redundant-inline-specifier"
-	-- 	.. ",-readability-simplify-boolean-expr",
+-- vim.list_extend(clang_tidy.args, {
+-- "--clang-analyzer-*",
+-- "--checks=*" -- abseil, altera, android, boost, bugprone,
+-- 	-- cert, clang, concurrency, cppcoreguidelines, darwin,
+-- 	-- fuchsia, google, hicpp, linuxkernel, llvm, llvmlibc,
+-- 	-- misc, modernize, mpi, objc, openmp, performance,
+-- 	-- portability, readability, zircon
+-- 	.. ",-darwin-*"
+-- 	.. ",-linuxkernel-*"
+-- 	.. ",-llvmlibc-*"
+-- 	.. ",-objc-*"
+-- 	.. ",-altera-unroll-loops"
+-- 	.. ",-bugprone-easily-swappable-parameters"
+-- 	.. ",-fuchsia-default-arguments-calls"
+-- 	.. ",-fuchsia-default-arguments-declarations"
+-- 	.. ",-fuchsia-overloaded-operator"
+-- 	.. ",-fuchsia-trailing-return"
+-- 	.. ",-google-explicit-constructor"
+-- 	.. ",-hicpp-explicit-conversions"
+-- 	.. ",-llvm-else-after-return"
+-- 	.. ",-llvm-header-guard"
+-- 	.. ",-misc-non-private-member-variables-in-classes"
+-- 	.. ",-misc-use-anonymous-namespace"
+-- 	.. ",-modernize-use-trailing-return-type"
+-- 	.. ",-readability-else-after-return"
+-- 	.. ",-readability-function-cognitive-complexity"
+-- 	.. ",-readability-identifier-length"
+-- 	.. ",-readability-isolate-declaration"
+-- 	.. ",-readability-magic-numbers"
+-- 	.. ",-readability-redundant-access-specifiers"
+-- 	.. ",-readability-redundant-inline-specifier"
+-- 	.. ",-readability-simplify-boolean-expr",
 
-	-- .. ",-cppcoreguidelines-avoid-do-while"
-	-- .. ",-cppcoreguidelines-avoid-magic-numbers"
-	-- .. ",-cppcoreguidelines-non-private-member-variables-in-classes"
-	-- .. ",-cppcoreguidelines-owning-memory"
-	-- .. ",-cppcoreguidelines-rvalue-reference-param-not-moved"
-	-- .. ",-modernize-use-nodiscard"
-})
+-- .. ",-cppcoreguidelines-avoid-do-while"
+-- .. ",-cppcoreguidelines-avoid-magic-numbers"
+-- .. ",-cppcoreguidelines-non-private-member-variables-in-classes"
+-- .. ",-cppcoreguidelines-owning-memory"
+-- .. ",-cppcoreguidelines-rvalue-reference-param-not-moved"
+-- .. ",-modernize-use-nodiscard"
+-- })
 
-require("lint").linters_by_ft = {
-	c = { "clangtidy" },
-	cpp = { "clangtidy" },
-	markdown = { "vale" },
-}
+-- require("lint").linters_by_ft = {
+-- 	c = { "clangtidy" },
+-- 	cpp = { "clangtidy" },
+-- 	markdown = { "vale" },
+-- }
 
 -- ============================================================================
 -- 12. TEXT OBJECTS / EDITING EXTRAS
